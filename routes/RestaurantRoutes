@@ -1,0 +1,61 @@
+const express = require('express');
+const router = express.Router();
+const Restaurant = require('../models/Restaurant');
+
+// Get all restaurants
+router.get('/', async (req, res) => {
+  let query = {};
+  let sort = {};
+
+  // Sorting
+  if (req.query.sortBy) {
+    sort.restaurant_id = req.query.sortBy.toUpperCase() === 'ASC' ? 1 : -1;
+  }
+
+  try {
+    const restaurants = await Restaurant.find(query).sort(sort);
+    res.json(restaurants);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Post route to add a new restaurant
+router.post('/', async (req, res) => {
+    try {
+      const newRestaurant = new Restaurant({
+        name: req.body.name,
+        cuisine: req.body.cuisine,
+        city: req.body.city,
+        restaurant_id: req.body.restaurant_id
+      });
+  
+      const savedRestaurant = await newRestaurant.save();
+      res.status(201).json(savedRestaurant);
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  });
+
+// Get restaurants by cuisine
+router.get('/cuisine/:cuisine', async (req, res) => {
+  try {
+    const cuisine = req.params.cuisine;
+    const restaurants = await Restaurant.find({ cuisine: cuisine });
+    res.json(restaurants);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Get Delicatessen not in Brooklyn
+router.get('/Delicatessen', async (req, res) => {
+  try {
+    const restaurants = await Restaurant.find({ cuisine: "Delicatessen", city: { $ne: "Brooklyn" } }).select("-_id name cuisine city").sort({ name: 1 });
+    res.json(restaurants);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+module.exports = router;
